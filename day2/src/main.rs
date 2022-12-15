@@ -61,9 +61,6 @@ fn get_hand(input: &str) -> Hand {
 
 #[derive(Clone, Debug, Copy)]
 struct Game {
-    player: Hand,
-    opponent: Hand,
-    result: GameResult,
     score: u64,
 }
 
@@ -74,12 +71,7 @@ impl Game {
         let player = get_hand(it.next().unwrap());
         let result = player.play(opponent);
         let score = (player as isize + result as isize) as u64;
-        Game {
-            opponent,
-            player,
-            result,
-            score,
-        }
+        Game { score }
     }
 
     pub fn calculate(tokens: String) -> Game {
@@ -88,12 +80,7 @@ impl Game {
         let result = get_result(it.next().unwrap());
         let player = opponent.decode(result);
         let score = (player as isize + result as isize) as u64;
-        Game {
-            player,
-            opponent,
-            result,
-            score,
-        }
+        Game { score }
     }
 }
 
