@@ -1,16 +1,10 @@
-use std::fs::File;
-use std::io::{prelude::*, BufReader};
+use advent::utils::get_lines;
 
-fn read_input(path: &str) -> BufReader<File> {
-    let file = File::open(path).unwrap();
-    BufReader::new(file)
-}
-
-fn get_calories(reader: BufReader<File>) -> Vec<u64> {
+fn get_calories(path: &str) -> Vec<u64> {
     let mut calories: Vec<u64> = Vec::new();
     let mut acc = 0u64;
 
-    for line in reader.lines().map(|l| l.unwrap()) {
+    for line in get_lines(path).iter() {
         match line.as_str() {
             "" => {
                 calories.push(acc);
@@ -44,8 +38,7 @@ fn part2(calories: &Vec<u64>) {
 }
 
 fn main() {
-    let reader = read_input("input.txt");
-    let mut calories = get_calories(reader);
+    let mut calories = get_calories("input.txt");
     calories.sort();
     part1(&calories);
     part2(&calories);
