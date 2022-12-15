@@ -1,5 +1,4 @@
-use std::fs::File;
-use std::io::{prelude::*, BufReader};
+use advent::utils::get_lines;
 
 #[derive(Clone, Debug, Copy)]
 enum GameResult {
@@ -98,14 +97,6 @@ impl Game {
     }
 }
 
-fn get_lines(path: &str) -> Vec<String> {
-    let file = File::open(path).unwrap();
-    BufReader::new(file)
-        .lines()
-        .map(|line| line.unwrap())
-        .collect::<Vec<String>>()
-}
-
 fn get_games_score<T>(reader: &Vec<String>, method: T) -> u64
 where
     T: Fn(String) -> Game,
@@ -115,9 +106,9 @@ where
 }
 
 fn main() {
-    let reader = get_lines("input.txt");
-    let score1 = get_games_score(&reader, |str: String| Game::new(str));
+    let lines = get_lines("input.txt");
+    let score1 = get_games_score(&lines, |str: String| Game::new(str));
     println!("{}", score1);
-    let score2 = get_games_score(&reader, |str: String| Game::calculate(str));
+    let score2 = get_games_score(&lines, |str: String| Game::calculate(str));
     println!("{}", score2);
 }
