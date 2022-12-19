@@ -14,7 +14,7 @@ fn split(s: &str) -> (HashSet<char>, HashSet<char>) {
     )
 }
 
-fn a(c: char) -> u32 {
+fn calculate_cost(c: char) -> u32 {
     if c.is_uppercase() {
         (c as u8 - 'A' as u8 + 27) as u32
     } else {
@@ -34,7 +34,7 @@ fn main() {
             acc
         })
         .iter()
-        .map(|c| a(*c))
+        .map(|c| calculate_cost(*c))
         .sum();
 
     let count2: u32 = lines
@@ -50,7 +50,7 @@ fn main() {
             acc
         })
         .iter()
-        .map(|c| a(*c))
+        .map(|c| calculate_cost(*c))
         .sum();
 
     println!("{:?}", count1);
