@@ -1,12 +1,11 @@
-use advent::utils::get_lines;
 use std::collections::HashSet;
 use std::hash::Hash;
 
-fn intersection<T: Eq + Hash>(a: HashSet<T>, b: &HashSet<T>) -> HashSet<T> {
+pub fn intersection<T: Eq + Hash>(a: HashSet<T>, b: &HashSet<T>) -> HashSet<T> {
     a.into_iter().filter(|e| b.contains(e)).collect()
 }
 
-fn split(s: &str) -> (HashSet<char>, HashSet<char>) {
+pub fn split(s: &str) -> (HashSet<char>, HashSet<char>) {
     let length = s.len();
     (
         s[..length / 2].chars().collect::<HashSet<char>>(),
@@ -14,7 +13,7 @@ fn split(s: &str) -> (HashSet<char>, HashSet<char>) {
     )
 }
 
-fn calculate_cost(c: char) -> u32 {
+pub fn calculate_cost(c: char) -> u32 {
     if c.is_uppercase() {
         (c as u8 - 'A' as u8 + 27) as u32
     } else {
@@ -22,9 +21,7 @@ fn calculate_cost(c: char) -> u32 {
     }
 }
 
-fn main() {
-    let lines = &get_lines("input.txt");
-
+pub fn do_(lines: Vec<String>) {
     let count1: u32 = lines
         .iter()
         .map(|line| split(line.as_str()))
@@ -55,4 +52,9 @@ fn main() {
 
     println!("{:?}", count1);
     println!("{:?}", count2);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
 }
