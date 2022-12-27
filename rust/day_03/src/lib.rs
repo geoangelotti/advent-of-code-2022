@@ -60,4 +60,23 @@ pub fn process_part_2(input: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const INPUT: &str = "vJrwpWtwJgWrhcsFMMfFFhFp
+jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
+PmmdzqPrVvPwwTWBwg
+wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
+ttgJtRGJQctTZtZT
+CrZsJsPPZsGzwwsLwLmpwMDw";
+
+    #[test]
+    fn part_1_works() {
+        let result = process_part_1(INPUT);
+        assert_eq!(result, "157");
+    }
+
+    #[test]
+    fn part_2_works() {
+        let result = process_part_2(INPUT);
+        assert_eq!(result, "70");
+    }
 }
