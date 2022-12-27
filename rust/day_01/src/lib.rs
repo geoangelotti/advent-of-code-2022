@@ -1,7 +1,3 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
-
 pub fn process_part_1(input: &str) -> String {
     input
         .split("\n\n")
