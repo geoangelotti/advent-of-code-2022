@@ -1,59 +1,48 @@
-use std::collections::HashSet;
-use std::hash::Hash;
+#![feature(iter_array_chunks)]
 
-fn intersection<T: Eq + Hash>(a: HashSet<T>, b: &HashSet<T>) -> HashSet<T> {
-    a.into_iter().filter(|e| b.contains(e)).collect()
-}
-
-fn split(s: &str) -> (HashSet<char>, HashSet<char>) {
-    let length = s.len();
-    (
-        s[..length / 2].chars().collect::<HashSet<char>>(),
-        s[length / 2..].chars().collect::<HashSet<char>>(),
-    )
-}
-
-fn calculate_cost(c: char) -> u32 {
-    if c.is_uppercase() {
-        (c as u8 - 'A' as u8 + 27) as u32
-    } else {
-        (c as u8 - 'a' as u8 + 1) as u32
-    }
-}
+use std::collections::HashMap;
 
 pub fn process_part_1(input: &str) -> String {
+    let letter_scores = ('a'..='z')
+        .chain('A'..='Z')
+        .enumerate()
+        .map(|(idx, c)| (c, idx + 1))
+        .collect::<HashMap<char, usize>>();
+
     input
         .lines()
-        .map(|line| split(line))
-        .map(|t| intersection(t.0, &t.1))
-        .fold(vec![], |mut acc: Vec<char>, i: HashSet<char>| {
-            acc.extend(i.into_iter());
-            acc
+        .map(|line| {
+            let midpoint = line.len() / 2;
+            let compartment_1 = &line[..midpoint];
+            let compartment_2 = &line[midpoint..];
+            let common_letter = compartment_1
+                .chars()
+                .find(|c| compartment_2.contains(*c))
+                .unwrap();
+            letter_scores.get(&common_letter).unwrap()
         })
-        .iter()
-        .map(|c| calculate_cost(*c))
-        .sum::<u32>()
+        .sum::<usize>()
         .to_string()
 }
 
 pub fn process_part_2(input: &str) -> String {
+    let letter_scores = ('a'..='z')
+        .chain('A'..='Z')
+        .enumerate()
+        .map(|(idx, c)| (c, idx + 1))
+        .collect::<HashMap<char, usize>>();
+
     input
         .lines()
-        .collect::<Vec<&str>>()
-        .chunks(3)
-        .map(|ch| {
-            ch.iter()
-                .map(|c| (*c).chars().collect::<HashSet<char>>())
-                .reduce(|acc, i| intersection(acc, &i))
-                .unwrap()
+        .array_chunks::<3>()
+        .map(|[a, b, c]| {
+            let common_letter = a
+                .chars()
+                .find(|a_char| b.contains(*a_char) && c.contains(*a_char))
+                .unwrap();
+            letter_scores.get(&common_letter).unwrap()
         })
-        .fold(vec![], |mut acc: Vec<char>, i: HashSet<char>| {
-            acc.extend(i.into_iter());
-            acc
-        })
-        .iter()
-        .map(|c| calculate_cost(*c))
-        .sum::<u32>()
+        .sum::<usize>()
         .to_string()
 }
 
