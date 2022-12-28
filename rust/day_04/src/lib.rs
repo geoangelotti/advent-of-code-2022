@@ -1,8 +1,8 @@
-fn overlaps<T>(lines: &str, limits: T) -> u32
+fn overlaps<T>(input: &str, limits: T) -> u32
 where
     T: Fn((u32, u32, u32, u32)) -> bool,
 {
-    lines
+    input
         .lines()
         .map(|line| {
             let mut sections = line.split(",");
@@ -20,26 +20,40 @@ where
         })
         .map(|tuple| limits(tuple))
         .map(|s| if s { 1 } else { 0 })
-        .sum()
+        .sum::<u32>()
 }
 
-fn main(lines: &str) {
-    println!(
-        "{}",
-        overlaps(lines, |tuple| {
-            (tuple.0 <= tuple.2 && tuple.3 <= tuple.1) || (tuple.2 <= tuple.0 && tuple.1 <= tuple.3)
-        })
-    );
+pub fn process_part_1(input: &str) -> String {
+    overlaps(input, |tuple| {
+        (tuple.0 <= tuple.2 && tuple.3 <= tuple.1) || (tuple.2 <= tuple.0 && tuple.1 <= tuple.3)
+    })
+    .to_string()
+}
 
-    println!(
-        "{}",
-        overlaps(lines, |tuple| {
-            !((tuple.1 < tuple.2) || (tuple.3 < tuple.0))
-        })
-    );
+pub fn process_part_2(input: &str) -> String {
+    overlaps(input, |tuple| !((tuple.1 < tuple.2) || (tuple.3 < tuple.0))).to_string()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const INPUT: &str = "2-4,6-8
+2-3,4-5
+5-7,7-9
+2-8,3-7
+6-6,4-6
+2-6,4-8";
+
+    #[test]
+    fn part_1_works() {
+        let result = process_part_1(INPUT);
+        assert_eq!(result, "2");
+    }
+
+    #[test]
+    fn part_2_works() {
+        let result = process_part_2(INPUT);
+        assert_eq!(result, "4");
+    }
 }
