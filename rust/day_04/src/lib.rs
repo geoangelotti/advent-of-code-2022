@@ -1,11 +1,9 @@
-use advent::utils::get_lines;
-
-fn overlaps<T>(lines: &Vec<String>, limits: T) -> u32
+fn overlaps<T>(lines: &str, limits: T) -> u32
 where
     T: Fn((u32, u32, u32, u32)) -> bool,
 {
     lines
-        .iter()
+        .lines()
         .map(|line| {
             let mut sections = line.split(",");
             let mut section_1 = sections.next().unwrap().split("-");
@@ -25,9 +23,7 @@ where
         .sum()
 }
 
-fn main() {
-    let lines = &get_lines("input.txt");
-
+fn main(lines: &str) {
     println!(
         "{}",
         overlaps(lines, |tuple| {
@@ -41,4 +37,9 @@ fn main() {
             !((tuple.1 < tuple.2) || (tuple.3 < tuple.0))
         })
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
 }
