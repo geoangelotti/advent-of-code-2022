@@ -1,37 +1,68 @@
-fn overlaps<T>(input: &str, limits: T) -> u32
-where
-    T: Fn((u32, u32, u32, u32)) -> bool,
-{
-    input
-        .lines()
-        .map(|line| {
-            let mut sections = line.split(",");
-            let mut section_1 = sections.next().unwrap().split("-");
-            let mut section_2 = sections.next().unwrap().split("-");
-            let (s1_start, s1_end) = (
-                section_1.next().unwrap().parse::<u32>().unwrap(),
-                section_1.next().unwrap().parse::<u32>().unwrap(),
-            );
-            let (s2_start, s2_end) = (
-                section_2.next().unwrap().parse::<u32>().unwrap(),
-                section_2.next().unwrap().parse::<u32>().unwrap(),
-            );
-            (s1_start, s1_end, s2_start, s2_end)
-        })
-        .map(|tuple| limits(tuple))
-        .map(|s| if s { 1 } else { 0 })
-        .sum::<u32>()
+use std::ops::RangeInclusive;
+
+use nom::{
+    bytes::complete::tag,
+    character::complete::{self, newline},
+    multi::separated_list1,
+    sequence::separated_pair,
+    IResult,
+};
+
+fn sections(input: &str) -> IResult<&str, RangeInclusive<u32>> {
+    let (input, (start, end)) = separated_pair(complete::u32, tag("-"), complete::u32)(input)?;
+    Ok((input, start..=end))
+}
+fn line(input: &str) -> IResult<&str, (RangeInclusive<u32>, RangeInclusive<u32>)> {
+    let (input, (start, end)) = separated_pair(sections, tag(","), sections)(input)?;
+
+    Ok((input, (start, end)))
+}
+fn section_assignments(
+    input: &str,
+) -> IResult<&str, Vec<(RangeInclusive<u32>, RangeInclusive<u32>)>> {
+    let (input, ranges) = separated_list1(newline, line)(input)?;
+
+    Ok((input, ranges))
 }
 
 pub fn process_part_1(input: &str) -> String {
-    overlaps(input, |tuple| {
-        (tuple.0 <= tuple.2 && tuple.3 <= tuple.1) || (tuple.2 <= tuple.0 && tuple.1 <= tuple.3)
-    })
-    .to_string()
+    let (_, assignments) = section_assignments(input).unwrap();
+
+    assignments
+        .iter()
+        .filter(|(range_a, range_b)| {
+            let a_contains_b = range_a
+                .clone()
+                .into_iter()
+                .all(|num| range_b.contains(&num));
+            let b_contains_a = range_b
+                .clone()
+                .into_iter()
+                .all(|num| range_a.contains(&num));
+            a_contains_b || b_contains_a
+        })
+        .count()
+        .to_string()
 }
 
 pub fn process_part_2(input: &str) -> String {
-    overlaps(input, |tuple| !((tuple.1 < tuple.2) || (tuple.3 < tuple.0))).to_string()
+    let (_, assignments) = section_assignments(input).unwrap();
+
+    assignments
+        .iter()
+        .filter(|(range_a, range_b)| {
+            let a_contains_b = range_a
+                .clone()
+                .into_iter()
+                .any(|num| range_b.contains(&num));
+            let b_contains_a = range_b
+                .clone()
+                .into_iter()
+                .any(|num| range_a.contains(&num));
+            a_contains_b || b_contains_a
+        })
+        .count()
+        .to_string()
 }
 
 #[cfg(test)]
