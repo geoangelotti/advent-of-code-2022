@@ -28,12 +28,6 @@ enum Files<'a> {
     Dir(&'a str),
 }
 
-#[derive(Debug)]
-struct File<'a> {
-    size: u32,
-    name: &'a str,
-}
-
 fn file(input: &str) -> IResult<&str, Files> {
     let (input, (size, name)) = separated_pair(
         nom::character::complete::u32,
@@ -73,125 +67,64 @@ fn commands(input: &str) -> IResult<&str, Vec<Command>> {
     Ok((input, cmd))
 }
 
-pub fn process_part_1(input: &str) -> String {
-    let cmds = commands(input).unwrap().1;
-    let mut directories: BTreeMap<String, Vec<File>> = BTreeMap::new();
-    let mut context: Vec<&str> = vec![];
-
-    for command in cmds.iter() {
-        match command {
-            Command::Cd(Cd::Root) => {
-                context.push("");
-            }
-            Command::Cd(Cd::Up) => {
-                context.pop();
-            }
-            Command::Cd(Cd::Down(name)) => {
-                context.push(name);
-            }
-            Command::Ls(files) => {
-                directories
-                    .entry(context.iter().cloned().intersperse("/").collect::<String>())
-                    .or_insert(vec![]);
-                for file in files.iter() {
-                    match file {
-                        Files::File { size, name } => {
-                            directories
-                                .entry(context.iter().cloned().intersperse("/").collect::<String>())
-                                .and_modify(|vec| {
-                                    vec.push(File { size: *size, name });
-                                });
-                        }
-                        Files::Dir(_) => (),
+fn calculate_sizes<'a>(
+    (mut context, mut sizes): (Vec<&'a str>, BTreeMap<Vec<&'a str>, u32>),
+    command: &'a Command,
+) -> (Vec<&'a str>, BTreeMap<Vec<&'a str>, u32>) {
+    match command {
+        Command::Cd(Cd::Root) => {
+            context.push("");
+        }
+        Command::Cd(Cd::Up) => {
+            context.pop();
+        }
+        Command::Cd(Cd::Down(name)) => {
+            context.push(name);
+        }
+        Command::Ls(files) => {
+            let sum = files
+                .iter()
+                .filter_map(|file| {
+                    if let Files::File { size, .. } = file {
+                        Some(size)
+                    } else {
+                        None
                     }
-                }
+                })
+                .sum::<u32>();
+
+            for i in 0..context.len() {
+                sizes
+                    .entry(context[0..=i].to_vec())
+                    .and_modify(|v| *v += sum)
+                    .or_insert(sum);
             }
         }
-    }
+    };
+    (context, sizes)
+}
 
-    let mut sizes: BTreeMap<String, u32> = BTreeMap::new();
-    for (path, files) in directories.iter() {
-        let dirs = path.split("/").collect::<Vec<&str>>();
-        let size = files.iter().map(|File { size, .. }| size).sum::<u32>();
-        for i in 0..dirs.len() {
-            sizes
-                .entry(
-                    (&dirs[0..=i])
-                        .iter()
-                        .cloned()
-                        .intersperse("/")
-                        .collect::<String>(),
-                )
-                .and_modify(|v| *v += size)
-                .or_insert(size);
-        }
-    }
+pub fn process_part_1(input: &str) -> String {
+    let (_, cmds) = commands(input).unwrap();
+
+    let (_, sizes) = cmds.iter().fold((vec![], BTreeMap::new()), calculate_sizes);
+
     sizes
         .iter()
-        .filter(|(_, &size)| size < 100000)
+        .filter(|(_, &size)| size < 100_000)
         .map(|(_, size)| size)
         .sum::<u32>()
         .to_string()
 }
 
 pub fn process_part_2(input: &str) -> String {
-    let cmds = commands(input).unwrap().1;
-    let mut directories: BTreeMap<String, Vec<File>> = BTreeMap::new();
-    let mut context: Vec<&str> = vec![];
-
-    for command in cmds.iter() {
-        match command {
-            Command::Cd(Cd::Root) => {
-                context.push("");
-            }
-            Command::Cd(Cd::Up) => {
-                context.pop();
-            }
-            Command::Cd(Cd::Down(name)) => {
-                context.push(name);
-            }
-            Command::Ls(files) => {
-                directories
-                    .entry(context.iter().cloned().intersperse("/").collect::<String>())
-                    .or_insert(vec![]);
-                for file in files.iter() {
-                    match file {
-                        Files::File { size, name } => {
-                            directories
-                                .entry(context.iter().cloned().intersperse("/").collect::<String>())
-                                .and_modify(|vec| {
-                                    vec.push(File { size: *size, name });
-                                });
-                        }
-                        Files::Dir(_) => (),
-                    }
-                }
-            }
-        }
-    }
-
-    let mut sizes: BTreeMap<String, u32> = BTreeMap::new();
-    for (path, files) in directories.iter() {
-        let dirs = path.split("/").collect::<Vec<&str>>();
-        let size = files.iter().map(|File { size, .. }| size).sum::<u32>();
-        for i in 0..dirs.len() {
-            sizes
-                .entry(
-                    (&dirs[0..=i])
-                        .iter()
-                        .cloned()
-                        .intersperse("/")
-                        .collect::<String>(),
-                )
-                .and_modify(|v| *v += size)
-                .or_insert(size);
-        }
-    }
+    let (_, cmds) = commands(input).unwrap();
+    let (_, sizes) = cmds.iter().fold((vec![], BTreeMap::new()), calculate_sizes);
 
     let total_size = 70_000_000;
     let needed_space = 30_000_000;
 
-    let used_space = sizes.get("").unwrap();
+    let used_space = sizes.get(&vec![""]).unwrap();
 
     let current_free_space = total_size - used_space;
     let need_to_free_at_least = needed_space - current_free_space;
