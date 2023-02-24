@@ -32,6 +32,7 @@ struct Move {
     from: u32,
     to: u32,
 }
+
 fn move_crate(input: &str) -> IResult<&str, Move> {
     let (input, _) = tag("move ")(input)?;
     let (input, number) = complete::u32(input)?;
@@ -48,6 +49,7 @@ fn move_crate(input: &str) -> IResult<&str, Move> {
         },
     ))
 }
+
 fn crates_and_moves(input: &str) -> IResult<&str, (Vec<Vec<&str>>, Vec<Move>)> {
     let (input, crates_horizontal) = separated_list1(newline, line)(input)?;
     let (input, _) = newline(input)?;
