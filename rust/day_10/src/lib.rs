@@ -1,22 +1,92 @@
-use std::collections::{BTreeMap, BTreeSet};
-
+use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{self, newline},
     multi::separated_list1,
     sequence::preceded,
-    IResult, *,
+    IResult,
+};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fmt::Display,
+    ops::RangeInclusive,
 };
 
 struct Computer {
     x: i32,
-    cycle: i32,
+    cycle: u32,
+    pixels: String,
+}
+
+impl Display for Computer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.pixels
+                .chars()
+                .chunks(40)
+                .into_iter()
+                .map(|chunk| chunk.collect::<String>())
+                .join("\n")
+        )
+    }
 }
 
 impl Computer {
     fn new() -> Self {
-        Computer { x: 1, cycle: 0 }
+        Computer {
+            x: 1,
+            cycle: 0,
+            pixels: "".to_string(),
+        }
+    }
+
+    fn sprite_range(&self) -> RangeInclusive<i32> {
+        (self.x - 1)..=(self.x + 1)
+    }
+
+    fn interpret(&mut self, instruction: &Instruction) {
+        for _ in 0..instruction.wait() {
+            let cycle_guard = self.start_cycle();
+
+            if cycle_guard
+                .computer
+                .sprite_range()
+                .contains(&(cycle_guard.pixel as i32))
+            {
+                cycle_guard.computer.pixels.push_str("#");
+            } else {
+                cycle_guard.computer.pixels.push_str(".");
+            }
+        }
+
+        match instruction {
+            Noop => {}
+            Addx(num) => {
+                self.x += num;
+            }
+        };
+    }
+
+    fn start_cycle(&mut self) -> Cycle {
+        Cycle {
+            cycle: self.cycle,
+            pixel: self.cycle % 40,
+            computer: self,
+        }
+    }
+}
+
+struct Cycle<'a> {
+    cycle: u32,
+    pixel: u32,
+    computer: &'a mut Computer,
+}
+impl<'a> Drop for Cycle<'a> {
+    fn drop(&mut self) {
+        self.computer.cycle += 1;
     }
 }
 
@@ -48,6 +118,7 @@ fn parse_addx(input: &str) -> IResult<&str, Instruction> {
 
     return Ok((input, Addx(number)));
 }
+
 fn parse_instructions(input: &str) -> IResult<&str, Vec<Instruction>> {
     let (input, instructions) = separated_list1(newline, alt((parse_noop, parse_addx)))(input)?;
 
@@ -56,7 +127,7 @@ fn parse_instructions(input: &str) -> IResult<&str, Vec<Instruction>> {
 
 pub fn process_part_1(input: &str) -> String {
     let (_, instructions) = parse_instructions(input).unwrap();
-    let notable_cycles: BTreeSet<i32> = [20, 60, 100, 140, 180, 220].into_iter().collect();
+    let notable_cycles: BTreeSet<u32> = [20, 60, 100, 140, 180, 220].into_iter().collect();
     let mut scores: BTreeMap<u32, i32> = BTreeMap::new();
     let mut computer = Computer::new();
 
@@ -75,7 +146,7 @@ pub fn process_part_1(input: &str) -> String {
             );
         }
 
-        computer.cycle += instruction.wait();
+        computer.cycle += instruction.wait() as u32;
         match instruction {
             Noop => {}
             Addx(num) => {
@@ -92,7 +163,15 @@ pub fn process_part_1(input: &str) -> String {
 }
 
 pub fn process_part_2(input: &str) -> String {
-    "".to_string()
+    let (_, instructions) = parse_instructions(input).unwrap();
+
+    instructions
+        .iter()
+        .fold(Computer::new(), |mut computer, instruction| {
+            computer.interpret(instruction);
+            computer
+        })
+        .to_string()
 }
 
 #[cfg(test)]
@@ -252,10 +331,16 @@ noop";
         assert_eq!(result, "13140");
     }
 
+    const OUTPUT_PART_2: &str = "##..##..##..##..##..##..##..##..##..##..
+###...###...###...###...###...###...###.
+####....####....####....####....####....
+#####.....#####.....#####.....#####.....
+######......######......######......####
+#######.......#######.......#######.....";
+
     #[test]
-    #[ignore]
     fn part_2_works() {
         let result = process_part_2(INPUT);
-        assert_eq!(result, "");
+        assert_eq!(result, OUTPUT_PART_2);
     }
 }
