@@ -37,7 +37,7 @@ struct Monkey {
 }
 
 impl Monkey {
-    fn inspect(&mut self, relief_lowers_worry_level: bool) -> u64 {
+    fn inspect(&mut self, relief_lowers_worry_level: bool, magic_trick: u64) -> u64 {
         self.touch_count += 1;
         let item = self.items.pop_front().unwrap();
         let worry_level = match &self.operation {
@@ -51,7 +51,7 @@ impl Monkey {
                     Value::Num(num) => *num,
                 };
                 let result = num_a * num_b;
-                result
+                result % magic_trick
             }
             Operation::Add((a, b)) => {
                 let num_a = match a {
@@ -63,7 +63,7 @@ impl Monkey {
                     Value::Num(num) => *num,
                 };
                 let result = num_a + num_b;
-                result
+                result % magic_trick
             }
         };
         let result = if relief_lowers_worry_level {
@@ -152,11 +152,15 @@ fn monkey(input: &str) -> IResult<&str, Monkey> {
 
 pub fn process_part_1(input: &str) -> String {
     let (_, mut monkeys) = separated_list1(tag("\n\n"), monkey)(input).unwrap();
+    let magic_trick = monkeys
+        .iter()
+        .map(|monkey| monkey.test.divisible)
+        .product::<u64>();
     for _ in 0..20 {
         for monkey_index in 0..monkeys.len() {
             for _ in 0..monkeys[monkey_index].items.len() {
                 let monkey = monkeys.get_mut(monkey_index).unwrap();
-                let item = monkey.inspect(true);
+                let item = monkey.inspect(true, magic_trick);
                 let monkey_to_send_to = monkey.test(item);
                 monkeys
                     .get_mut(monkey_to_send_to as usize)
@@ -176,8 +180,37 @@ pub fn process_part_1(input: &str) -> String {
         .to_string()
 }
 
-pub fn process_part_2(_input: &str) -> String {
-    "".to_string()
+pub fn process_part_2(input: &str) -> String {
+    let (_, mut monkeys) = separated_list1(tag("\n\n"), monkey)(input).unwrap();
+    let magic_trick = monkeys
+        .iter()
+        .map(|monkey| monkey.test.divisible)
+        .product::<u64>();
+
+    for _ in 0..10_000 {
+        for monkey_index in 0..monkeys.len() {
+            // println!("Monkey {monkey_index}:");
+            for _ in 0..monkeys[monkey_index].items.len() {
+                let monkey = monkeys.get_mut(monkey_index).unwrap();
+                let item = monkey.inspect(false, magic_trick);
+                let monkey_to_send_to = monkey.test(item);
+                // println!("    Item with worry level {item} is thrown to monkey {monkey_to_send_to}.");
+                monkeys
+                    .get_mut(monkey_to_send_to as usize)
+                    .unwrap()
+                    .items
+                    .push_back(item);
+            }
+        }
+    }
+    monkeys.sort_by_key(|monkey| monkey.touch_count);
+    monkeys
+        .iter()
+        .rev()
+        .take(2)
+        .map(|monkey| monkey.touch_count)
+        .product::<u64>()
+        .to_string()
 }
 
 #[cfg(test)]
@@ -220,7 +253,7 @@ Monkey 3:
 
     #[test]
     fn part_2_works() {
-        let result = process_part_2("");
-        assert_eq!(result, "");
+        let result = process_part_2(INPUT);
+        assert_eq!(result, "2713310158");
     }
 }
