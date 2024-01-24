@@ -4,7 +4,7 @@ use nom::{
     character::complete::newline,
     multi::{separated_list0, separated_list1},
     sequence::{delimited, separated_pair},
-    *,
+    IResult, Parser,
 };
 use std::cmp::Ordering::{self, *};
 
@@ -80,6 +80,29 @@ pub fn process_part_1(input: &str) -> String {
         .to_string()
 }
 
+pub fn process_part_2(input: &str) -> String {
+    let (_, pairs) = pairs(input).unwrap();
+    let divider_2 = Packet::List(vec![Packet::List(vec![Packet::Number(2)])]);
+    let divider_6 = Packet::List(vec![Packet::List(vec![Packet::Number(6)])]);
+    let mut packets = pairs
+        .iter()
+        .flat_map(|Pair { left, right }| [left, right])
+        .chain([&divider_2, &divider_6])
+        .collect::<Vec<&Packet>>();
+    packets.sort();
+    let index_2 = packets
+        .iter()
+        .enumerate()
+        .find(|(_, &packet)| packet == &divider_2)
+        .unwrap();
+    let index_6 = packets
+        .iter()
+        .enumerate()
+        .find(|(_, &packet)| packet == &divider_6)
+        .unwrap();
+    ((index_2.0 + 1) * (index_6.0 + 1)).to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -109,8 +132,14 @@ mod tests {
 [1,[2,[3,[4,[5,6,0]]]],8,9]";
 
     #[test]
-    fn it_works() {
+    fn part_1_works() {
         let result = process_part_1(INPUT);
         assert_eq!(result, "13");
+    }
+
+    #[test]
+    fn part_2_works() {
+        let result = process_part_2(INPUT);
+        assert_eq!(result, "140");
     }
 }
